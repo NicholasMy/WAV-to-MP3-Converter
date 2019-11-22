@@ -1,6 +1,7 @@
 import os
 import pydub
 import pathlib
+import datetime
 
 # User variables here:
 INPUT_DIR = "input"
@@ -9,6 +10,7 @@ LOG_FILE = "log.txt"
 
 # End of user variables
 
+# Get the absolute paths to the folders specified above in case the user gave a relative path
 INPUT_DIR = os.path.abspath(INPUT_DIR)
 OUTPUT_DIR = os.path.abspath(OUTPUT_DIR)
 
@@ -21,10 +23,11 @@ def get_all_files_in_dir(parent_path):
         if os.path.isfile(path):
             all_files.append(path)
         elif os.path.isdir(path):  # This is a directory, so get files inside of it
-            all_files += (get_all_files_in_dir(path))  # Recursive add songs inside child dir
+            all_files += (get_all_files_in_dir(path))  # Recursively add songs inside child dir
     return all_files
 
 
+# Given a list of files, return a list of only the .wav ones
 def filter_to_wav(file_paths):
     wav = []
     for path in file_paths:
@@ -43,31 +46,29 @@ def get_new_file_name(old_file_name, output_directory):
     return new_file_name
 
 
+# Performs the audio conversion from wav to mp3 and handles logging it
 def convert_wav_to_mp3(wav_path, mp3_path):
+    global LOG_FILE
+    start_time = datetime.datetime.now()
     parent_dir = pathlib.Path(mp3_path).parent
-    print(parent_dir)
     pathlib.Path(parent_dir).mkdir(parents=True, exist_ok=True)
     song = pydub.AudioSegment.from_wav(wav_path)
     song.export(mp3_path, format="mp3")
+    song_title = os.path.basename(mp3_path)
+    wav_size = os.stat(wav_path).st_size / 1_000_000  # Convert bytes to megabytes
+    mp3_size = os.stat(mp3_path).st_size / 1_000_000
+    percent_smaller = ((wav_size - mp3_size) / wav_size) * 100
+    end_time = datetime.datetime.now()
+    delta_time = end_time - start_time
+    seconds_elapsed = delta_time.seconds
+    with open(LOG_FILE, "a") as f:
+        f.write("Converted \"{}\" in {} second(s). Went from {:.2f} MB to {:.2f} MB ({:.2f}% smaller).\n".format(song_title, seconds_elapsed, wav_size, mp3_size, percent_smaller))
+
 
 all_files = get_all_files_in_dir(INPUT_DIR)
-
 all_wav = filter_to_wav(all_files)
+
 for song_path in all_wav:
     new_song_path = get_new_file_name(song_path, OUTPUT_DIR)
     print("Converting ({}) to ({})".format(song_path, new_song_path))
     convert_wav_to_mp3(song_path, new_song_path)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
