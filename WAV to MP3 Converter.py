@@ -1,8 +1,11 @@
 import os
+import pydub
+import pathlib
 
 # User variables here:
 INPUT_DIR = "input"
 OUTPUT_DIR = "output"
+LOG_FILE = "log.txt"
 
 # End of user variables
 
@@ -40,11 +43,20 @@ def get_new_file_name(old_file_name, output_directory):
     return new_file_name
 
 
+def convert_wav_to_mp3(wav_path, mp3_path):
+    parent_dir = pathlib.Path(mp3_path).parent
+    print(parent_dir)
+    pathlib.Path(parent_dir).mkdir(parents=True, exist_ok=True)
+    song = pydub.AudioSegment.from_wav(wav_path)
+    song.export(mp3_path, format="mp3")
+
 all_files = get_all_files_in_dir(INPUT_DIR)
 
 all_wav = filter_to_wav(all_files)
-for i in all_wav[:1]:
-    print(get_new_file_name(i, OUTPUT_DIR))
+for song_path in all_wav:
+    new_song_path = get_new_file_name(song_path, OUTPUT_DIR)
+    print("Converting ({}) to ({})".format(song_path, new_song_path))
+    convert_wav_to_mp3(song_path, new_song_path)
 
 
 
