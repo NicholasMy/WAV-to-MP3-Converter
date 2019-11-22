@@ -19,17 +19,22 @@ def get_all_files_in_dir(parent_path):
     return all_files
 
 
-def filter_to_mp3(file_paths):
+def filter_to_wav(file_paths):
+    wav = []
     for path in file_paths:
-        pass
+        name, ext = os.path.splitext(path)
+        print(ext)
+        if ext == ".wav":
+            wav.append(path)
+    return wav
 
 
 
-a = get_all_files_in_dir(INPUT_DIR)
-for b in a:
-    print(b)
+all_files = get_all_files_in_dir(INPUT_DIR)
 
-
+all_wav = filter_to_wav(all_files)
+for i in all_wav:
+    print(i)
 
 
 
