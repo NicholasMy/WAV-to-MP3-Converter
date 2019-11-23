@@ -15,6 +15,15 @@ INPUT_DIR = os.path.abspath(INPUT_DIR)
 OUTPUT_DIR = os.path.abspath(OUTPUT_DIR)
 
 
+# Audio silence remover from https://stackoverflow.com/questions/29547218/remove-silence-at-the-beginning-and-at-the-end-of-wave-files-with-pydub
+def detect_leading_silence(sound, silence_threshold=-50.0, chunk_size=10):
+    trim_ms = 0
+    assert chunk_size > 0  # to avoid infinite loop
+    while sound[trim_ms:trim_ms+chunk_size].dBFS < silence_threshold and trim_ms < len(sound):
+        trim_ms += chunk_size
+    return trim_ms
+
+
 # Returns a list of all file paths inside a parent directory recursively, does not return folders
 def get_all_files_in_dir(parent_path):
     all_files = []
@@ -53,6 +62,10 @@ def convert_wav_to_mp3(wav_path, mp3_path):
     parent_dir = pathlib.Path(mp3_path).parent
     pathlib.Path(parent_dir).mkdir(parents=True, exist_ok=True)
     song = pydub.AudioSegment.from_wav(wav_path)
+    start_trim = detect_leading_silence(song)
+    end_trim = detect_leading_silence(song.reverse())
+    duration = len(song)
+    song = song[start_trim:duration-end_trim]  # Remove silence from beginning and end
     song.export(mp3_path, format="mp3")
     song_title = os.path.basename(mp3_path)
     wav_size = os.stat(wav_path).st_size / 1_000_000  # Convert bytes to megabytes
